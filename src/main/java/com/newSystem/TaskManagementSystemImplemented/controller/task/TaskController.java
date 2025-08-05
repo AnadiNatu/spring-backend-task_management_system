@@ -3,6 +3,8 @@ package com.newSystem.TaskManagementSystemImplemented.controller.task;
 import com.newSystem.TaskManagementSystemImplemented.dto.applicationDto.*;
 import com.newSystem.TaskManagementSystemImplemented.dto.authenticationDto.UsersDTO;
 import com.newSystem.TaskManagementSystemImplemented.entity.Task;
+import com.newSystem.TaskManagementSystemImplemented.repository.UserRepository;
+import com.newSystem.TaskManagementSystemImplemented.service.authService.AuthService;
 import com.newSystem.TaskManagementSystemImplemented.service.taskService.TaskService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -20,12 +22,18 @@ import java.util.List;
 public class TaskController {
 
     private final TaskService taskService;
+    private final AuthService authService;
 
-    @GetMapping("/users")
+    @GetMapping("/allUsers")
     public ResponseEntity<List<UsersDTO>> getAllUser(){
-        List<UsersDTO> userList = taskService.getAllTheUser();
+        List<UsersDTO> userList = authService.getAllTheUser();
 
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(userList);
+    }
+
+    @GetMapping("/getUserById/{id}")
+    public ResponseEntity<UsersDTO> getUserById(@PathVariable("id") Long id){
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(authService.getUserById(id));
     }
 
     @PostMapping("/create")
@@ -114,4 +122,19 @@ public class TaskController {
    public ResponseEntity<TasksDTO> updateTaskStatus(@RequestBody TaskStatusUpdateDTO dto){
         return ResponseEntity.ok(taskService.updateTaskStatus(dto));
    }
+
+//   @GetMapping("/getTaskByTitle/{taskTitle}")
+//    public ResponseEntity<TasksDTO> getTaskByTitle(@PathVariable(name = "taskTitle")String title){
+//        return ResponseEntity.ok(taskService.getTaskByTitle(title));
+//   }
+
+    @GetMapping("/assignedTo/assignedFrom/{assignedFrom}")
+    public ResponseEntity<TasksDTO> getTaskByAssignedToAndAssignedFrom(@PathVariable(name = "assignedFrom") String assignedFrom){
+        return ResponseEntity.ok(taskService.getTaskByAssignedToAndAssignedFrom(assignedFrom));
+    }
+
+    @GetMapping("/getAllUsers")
+    public ResponseEntity<List<String>> getAllUsers(){
+        return ResponseEntity.ok(taskService.getAllUsers());
+    }
 }

@@ -35,4 +35,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT t FROM Task t JOIN t.previouslyAssignedTo u WHERE LOWER(u.name) = LOWER(:previouslyAssignedToName)")
     List<Task> findAllByPreviousLyAssignedTo(@Param("previouslyAssignedToName") String previouslyAssignedTo);
 
+//    @Query("SELECT t FROM Task t JOIN t.")
+
 }

@@ -30,11 +30,6 @@ public class TaskService {
     private final UserRepository usersRepository;
     private final JwtUtils jwtUtil;
 
-
-    public List<UsersDTO> getAllTheUser(){
-        return usersRepository.findByUserRoles(UserRoles.EMPLOYEE).stream().map(taskMapper::toUserDto).collect(Collectors.toList());
-    }
-
     public Task createTask(CreateTaskDTO createTaskDTO) {
         Users fromUser = usersRepository.findUserByUsername(createTaskDTO.getAssignedFrom())
                 .orElseThrow(() -> new ResourceNotFoundException("Assigned from user not found: " + createTaskDTO.getAssignedFrom()));
@@ -53,7 +48,6 @@ public class TaskService {
         return tasksRepository.save(task);
 
     }
-
 
     public TasksDTO assigningCreatedTask(TaskAssignmentDTO dto) {
         Task task = tasksRepository.findById(dto.getTaskId())
@@ -83,8 +77,6 @@ public class TaskService {
         return taskMapper.toDTO(task);
 
     }
-
-
 
     public AllUserAndTaskDetailDTO reassigningCreatedTask(TaskReassignmentDTO dto) {
         Task task = tasksRepository.findByTaskTitle(dto.getTaskTitle())
@@ -116,7 +108,6 @@ public class TaskService {
         tasksRepository.save(task);
         return taskMapper.mapForUserTaskInfo(taskMapper.toDTO(task), task);
     }
-
 
     public AllUserAndTaskDetailDTO taskStatusUpdate(TaskStatusUpdateDTO dto) {
         Task task = tasksRepository.findByTaskTitle(dto.getTaskTitle())
@@ -160,8 +151,8 @@ public class TaskService {
         return taskMapper.mapForUserTaskInfo(taskMapper.toDTO(savedTask), savedTask);
     }
 
-
     public List<AllUserAndTaskDetailDTO> getAllTaskByAssignedFrom(String assignedFrom) {
+//        String user = jwtUtil.getLoggedInUser().getName()
         List<Task> tasks = tasksRepository.findAllByAssignedFrom(assignedFrom);
 
         Users users = jwtUtil.getLoggedInUser();
@@ -177,7 +168,6 @@ public class TaskService {
                 .map(task -> taskMapper.mapForUserTaskInfo(taskMapper.toDTO(task), task))
                 .collect(Collectors.toList());
     }
-
 
     public List<AllUserAndTaskDetailDTO> getAllTaskByAssignedTo(String assignedTo) {
         List<Task> tasks = tasksRepository.findAllByAssignedTo(assignedTo);
@@ -196,7 +186,6 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
-
     public List<AllUserAndTaskDetailDTO> getAllTaskByPreviouslyAssignedTo(String previouslyAssignedTo) {
         List<Task> tasks = tasksRepository.findAllByPreviousLyAssignedTo(previouslyAssignedTo);
 
@@ -213,7 +202,6 @@ public class TaskService {
                 .map(task -> taskMapper.mapForUserTaskInfo(taskMapper.toDTO(task), task))
                 .collect(Collectors.toList());
     }
-
 
     public List<AllUserAndTaskDetailDTO> getTaskByAssignedUserAndStatus(String userName, String taskStatus) {
         TaskStatus status;
@@ -241,7 +229,6 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
-
     public List<AllUserAndTaskDetailDTO> getTaskByStatusBetweenDates(Date startDate, Date endDate, String taskStatus) {
         TaskStatus status;
         try {
@@ -265,7 +252,6 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
-
     public AllUserAndTaskDetailDTO getTaskByTaskTitle(String taskTitle) {
         Users users = jwtUtil.getLoggedInUser();
         if (!userRoleAdminOrEmployee(users)){
@@ -276,7 +262,6 @@ public class TaskService {
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with title: " + taskTitle));
         return taskMapper.mapForUserTaskInfo(taskMapper.toDTO(task), task);
     }
-
 
     public String deleteTaskAfterCompletion() {
         List<Task> completedTasks = tasksRepository.findAllByTaskStatus(TaskStatus.COMPLETED);
@@ -289,18 +274,9 @@ public class TaskService {
         return completedTasks.size() + " completed tasks deleted.";
     }
 
-
     public TasksDTO getTaskById(Long id){
         Task task = tasksRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + id));
-
-        return taskMapper.toDTO(task);
-    }
-
-
-    public TasksDTO getTaskByTitle(String title){
-        Task task = tasksRepository.findByTaskTitle(title)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found with title: " + title));
 
         return taskMapper.toDTO(task);
     }
@@ -320,7 +296,6 @@ public class TaskService {
         return taskMapper.toDTOList(tasks);
     }
 
-
     public List<TasksDTO> getTasksAssignedBetweenDate(Date start , Date end){
 
         List<Task> tasks = tasksRepository
@@ -338,7 +313,6 @@ public class TaskService {
         return taskMapper.toDTOList(tasks);
     }
 
-
     public TasksDTO updateTaskStatus(TaskStatusUpdateDTO dto){
 
         Task task = tasksRepository.findByTaskTitle(dto.getTaskTitle()).orElseThrow(() -> new ResourceNotFoundException("Task not found with title: " + dto.getTaskTitle()));
@@ -348,6 +322,32 @@ public class TaskService {
         task.setCompletedAt(TaskStatus.COMPLETED.equals(newStatus) ? new Date() : null);
 
         return taskMapper.toDTO(tasksRepository.save(task));
+    }
+
+//    public TasksDTO getTaskByTitle(String title){
+//        Task task = tasksRepository.findByTaskTitle(title)
+//                .orElseThrow(() -> new ResourceNotFoundException("Task not found with title: " + title));
+//
+//        return taskMapper.toDTO(task);
+//    }
+
+    public TasksDTO getTaskByAssignedToAndAssignedFrom(String assignedFrom){
+        Users users = jwtUtil.getLoggedInUser();
+        Task task;
+        Users assignedFromUser = usersRepository.findUserByNameContaining(assignedFrom).orElseThrow(() -> new RuntimeException("User was not found"));
+        if (userRoleAdminOrEmployee(users) && userRoleAdminOrEmployer(assignedFromUser)) {
+            task = tasksRepository.findByAssignedToAndAssignedFrom(users.getName() , assignedFrom).orElseThrow(() -> new RuntimeException("Task was not found"));
+            return taskMapper.toDTO(task);
+        }
+        return null;
+    }
+
+    public List<String> getAllUsers(){
+        return usersRepository.findAll().stream().map(Users::getName).collect(Collectors.toList());
+    }
+
+    public List<String> getAllDepartments(){
+        return tasksRepository.findAll().stream().map(Task::getAssignedFrom).map(Users :: getDepartment).distinct().collect(Collectors.toList());
     }
 
 

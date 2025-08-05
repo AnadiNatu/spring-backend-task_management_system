@@ -16,8 +16,13 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 
 @Service
 public class AuthService {
@@ -140,6 +145,33 @@ public class AuthService {
 
     public boolean hasUserWithUsername(String username){
         return userRepository.findUserByUsername(username).isPresent();
-
     }
+
+    public UsersDTO getUserById(Long id){
+        return userRepository.findById(id).map(user -> mapper.toUserDto(user)).orElseThrow(() -> new UsernameNotFoundException("User with Id " +id+ "not found"));
+    }
+
+    public List<UsersDTO> getAllTheUser(){
+        return userRepository.findByUserRoles(UserRoles.EMPLOYEE).stream().map(mapper::toUserDto).collect(Collectors.toList());
+    }
+
+    public String uploadProfileImage(Long userId, MultipartFile file) {
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userId));
+
+        try {
+            user.setProfileImage(file.getBytes());
+            userRepository.save(user);
+            return "Profile image uploaded successfully.";
+        } catch (IOException e) {
+            throw new RuntimeException("Error uploading profile image", e);
+        }
+    }
+
+    public byte[] getUserProfileImage(Long userId) {
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userId));
+        return user.getProfileImage();
+    }
+
 }
