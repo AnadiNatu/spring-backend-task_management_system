@@ -11,7 +11,9 @@ import com.newSystem.TaskManagementSystemImplemented.security.JwtUtils;
 import com.newSystem.TaskManagementSystemImplemented.security.UserDetailService;
 import com.newSystem.TaskManagementSystemImplemented.service.authService.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -19,7 +21,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -129,4 +133,37 @@ public class AuthController {
           return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(" Failed to reset password" + ex.getMessage());
       }
     }
+
+    @GetMapping("/allUsers")
+    public ResponseEntity<List<UsersDTO>> getAllUser(){
+        List<UsersDTO> userList = authService.getAllTheUser();
+
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(userList);
+    }
+
+    @GetMapping("/getUserById/{id}")
+    public ResponseEntity<UsersDTO> getUserById(@PathVariable("id") Long id){
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(authService.getUserById(id));
+    }
+
+    @PostMapping("/upload-profile-image/{id}")
+    public ResponseEntity<String> uploadProfileImage(@PathVariable("id") Long userId,
+                                                     @RequestParam("file") MultipartFile file) {
+        try {
+            String message = authService.uploadProfileImage(userId, file);
+            return ResponseEntity.ok(message);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/get-profile-image/{id}")
+    public ResponseEntity<byte[]> getProfileImage(@PathVariable("id") Long userId) {
+        byte[] imageData = authService.getUserProfileImage(userId);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.IMAGE_JPEG); // or detect based on content
+        return new ResponseEntity<>(imageData, headers, HttpStatus.OK);
+    }
+
 }

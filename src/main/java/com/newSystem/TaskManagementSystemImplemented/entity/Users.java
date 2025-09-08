@@ -42,6 +42,11 @@ public class Users implements UserDetails {
     @OneToMany(mappedBy = "assignedTo" , fetch = FetchType.LAZY , cascade = CascadeType.ALL)
     private List<Task> task = new ArrayList<>();
 
+    @Lob
+    @Column(name = "profile_image")
+    private byte[] profileImage;
+
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(userRoles.name()));
